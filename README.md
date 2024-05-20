@@ -1,4 +1,5 @@
 # Yu multiomics analysis 2024
+[![DOI](https://zenodo.org/badge/803057291.svg)](https://zenodo.org/doi/10.5281/zenodo.11218439)
 James Yu, et al., 
 
 ## Abstract
