@@ -151,6 +151,12 @@ combinedData <- nestedMetabolomes%>%
 # STATS -- set seed -------------------------------------------------------
 set.seed(12683018)
 
+
+# STATS -- qq plots ------------------------------------------------------
+rawPhenotype%>%
+  elect(iid, hct:hchvr)%>%
+car::qqPlot(rawPhe)
+
 # STATS -- random Forest --------------------------------------------------
 #Random forest 
 
@@ -235,8 +241,18 @@ significantLmer <- lmerData%>%
 
 write_csv(significantLmer, '~/Documents/GitHub/yuHCT/data/analysis/allPvalues.csv')
 
+significantMetabolites <- significantLmer%>% 
+  filter(dataType == 'metabolomics')%>% 
+  group_by(responseVariable)%>%
+  mutate(min= min(R2m), 
+         max = max(R2m), 
+         maxP = max(FDR), 
+         n = 1, 
+         n = sum(n))%>% 
+  summarize_if(is.numeric, mean)%>% 
+  select(responseVariable, min, max, maxP, n)
 
-
+write_csv(significantMetabolites, '~/Documents/GitHub/yuHCT/data/analysis/significantMetaboliteSummary.csv')
 
 # Hierarchical clustering -------------------------------------------------
 circosFeatureClusters <- significantLmer%>%
