@@ -77,7 +77,8 @@ rawGenotype <- read_csv('~/Documents/GitHub/yuHCT/data/raw/genotype_20240415.csv
 # group_by(dataType)%>%
 # nest()
 
-rawPhenotype <- read_csv('~/Documents/GitHub/yuHCT/data/raw/phenotype_20240515.csv')
+rawPhenotype <- read_csv('~/Documents/GitHub/yuHCT/data/raw/phenotype_20240603.csv')%>%
+  select(-X23)
 
 rawProteomics <- read_csv('~/Documents/GitHub/yuHCT/data/raw/proteomics_20240415.csv')%>%
   mutate(dataType = 'proteomics')
@@ -92,7 +93,7 @@ joinAndNest <- function(x) {
               select(iid, hct:hchvr, age, sex, bmi, smoker),
             by = 'iid')%>%
     select(hct:hchvr, iid, everything())%>%
-    pivot_longer(1:18, names_to = 'responseVariable', values_to = 'responseValue')%>%
+    pivot_longer(1:17, names_to = 'responseVariable', values_to = 'responseValue')%>%
     group_by(dataType, responseVariable)%>%
     nest()%>%
     mutate(data = map(data, ~ select(.x, iid, age, sex, bmi, smoker, responseValue, everything())%>%
@@ -153,17 +154,23 @@ set.seed(12683018)
 
 
 # STATS -- qq plots ------------------------------------------------------
+pdf('~/Documents/GitHub/yuHCT/data/plots/qqPlots.pdf', width = 12, height = 10)
 rawPhenotype%>%
-  elect(iid, hct:hchvr)%>%
-car::qqPlot(rawPhe)
-
+  select(iid, hct:hchvr)%>%
+  pivot_longer(2:ncol(.), names_to = 'responseVariable', values_to = 'responseValue')%>%
+  group_by(responseVariable)%>%
+  nest()%>%
+  mutate(data = map2(data, responseVariable, ~ pull(.x, responseValue)%>%
+                      car::qqPlot() +
+                       title(.y)))
+dev.off()
 # STATS -- random Forest --------------------------------------------------
 #Random forest 
 
 ## This section is how the random forest was originally computed for all of the phenotypes. However, because it takes so long to run
 ## the random forest, we now just import the analysis files belows.
-# rfDataFrame <- combinedData%>%
-#   mutate(rForest = map(rForest, ~ randomForest(responseValue ~ ., .x,importance = TRUE, proximity = TRUE, ntree = 100000)))
+# # rfDataFrame <- combinedData%>%
+# #   mutate(rForest = map(rForest, ~ randomForest(responseValue ~ ., .x,importance = TRUE, proximity = TRUE, ntree = 100000)))
 # 
 # rfValues <- rfDataFrame%>%
 #   mutate(rForest = map(rForest, ~ (.x$importance%>%
@@ -177,10 +184,8 @@ car::qqPlot(rawPhe)
 #                          filter(feature %in% .y)),
 #            name = str_c('~/Documents/GitHub/yuHCT/data/analysis/randomForest', responseVariable, '.csv'))%>%
 #     select(-rForest)
-# 
-# map2(rfValues$data, rfValues$name, ~write_csv(.x%>%
-#                                                 as.data.frame(),
-#                                               .y))
+
+# map2(rfValues$data, rfValues$name, ~write_csv(.x%>% as.data.frame(), .y))
 
 
 rfValues%>%
@@ -483,7 +488,7 @@ variableLinks <- circosPrep%>%
               unique(), 
             by = 'feature')%>%
   ungroup()%>%
-  group_by(feature)%>%
+  group_by(feature)
   mutate(bandStart = as.numeric(start),
          bandEnd = as.numeric(bandEnd),
          n = 1,
@@ -504,13 +509,13 @@ variableLinks <- circosPrep%>%
            R2m > 0.6 & R2m <= 0.7 & name == 'Metabalome' ~ 'vdgreen',
            R2m > 0.7 & R2m <= 0.8 & name == 'Metabalome' ~ 'vvdgreen',
            #Proteome colors
-           R2m <= 0.12 & name == 'Proteome' ~ 'vvlred',
-           R2m > 0.12 & R2m <= 0.15 &  name == 'Proteome' ~ 'vlred',
-           R2m > 0.15 & R2m <= 0.18 & name == 'Proteome' ~ 'lred',
-           R2m > 0.18 & R2m <= 0.21 & name == 'Proteome' ~ 'red',
-           R2m > 0.21 & R2m <= 0.24 & name == 'Proteome' ~ 'dred',
-           R2m > 0.24 & R2m <= 0.27 & name == 'Proteome' ~ 'vdred',
-           R2m > 0.27 & R2m <= 0.30 & name == 'Proteome' ~ 'vvdred',
+           R2m <= 0.13 & name == 'Proteome' ~ 'vvlred',
+           R2m > 0.13 & R2m <= 0.16 &  name == 'Proteome' ~ 'vlred',
+           R2m > 0.16 & R2m <= 0.19 & name == 'Proteome' ~ 'lred',
+           R2m > 0.19 & R2m <= 0.22 & name == 'Proteome' ~ 'red',
+           R2m > 0.22 & R2m <= 0.25 & name == 'Proteome' ~ 'dred',
+           R2m > 0.25 & R2m <= 0.28 & name == 'Proteome' ~ 'vdred',
+           R2m > 0.28 & R2m <= 0.33 & name == 'Proteome' ~ 'vvdred',
            #Genotype colors
           R2m <= 0.15 & name == 'Genotype' ~ 'vvlblue',
            R2m > 0.15 & R2m <= 0.18 & name == 'Genotype' ~ 'vlblue',
@@ -555,13 +560,13 @@ responseLinks <- circosPrep%>%
            R2m > 0.6 & R2m <= 0.7 & dataType == 'Metabalome' ~ 'vdgreen',
            R2m > 0.7 & R2m <= 0.8 & dataType == 'Metabalome' ~ 'vvdgreen',
            #Proteome colors
-           R2m <= 0.12 & dataType == 'Proteome' ~ 'vvlred',
-           R2m > 0.12 & R2m <= 0.15 &  dataType == 'Proteome' ~ 'vlred',
-           R2m > 0.15 & R2m <= 0.18 & dataType == 'Proteome' ~ 'lred',
-           R2m > 0.18 & R2m <= 0.21 & dataType == 'Proteome' ~ 'red',
-           R2m > 0.21 & R2m <= 0.24 & dataType == 'Proteome' ~ 'dred',
-           R2m > 0.24 & R2m <= 0.27 & dataType == 'Proteome' ~ 'vdred',
-           R2m > 0.27 & R2m <= 0.30 & dataType == 'Proteome' ~ 'vvdred',
+           R2m <= 0.13 & dataType == 'Proteome' ~ 'vvlred',
+           R2m > 0.13 & R2m <= 0.16 &  dataType == 'Proteome' ~ 'vlred',
+           R2m > 0.16 & R2m <= 0.19 & dataType == 'Proteome' ~ 'lred',
+           R2m > 0.19 & R2m <= 0.22 & dataType == 'Proteome' ~ 'red',
+           R2m > 0.22 & R2m <= 0.25 & dataType == 'Proteome' ~ 'dred',
+           R2m > 0.25 & R2m <= 0.28 & dataType == 'Proteome' ~ 'vdred',
+           R2m > 0.28 & R2m <= 0.33 & dataType == 'Proteome' ~ 'vvdred',
            #Genotype colors
            R2m <= 0.15 & dataType == 'Genotype' ~ 'vvlblue',
            R2m > 0.15 & R2m <= 0.18 & dataType == 'Genotype' ~ 'vlblue',
