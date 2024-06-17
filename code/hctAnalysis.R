@@ -137,7 +137,7 @@ responses <- dir(path = '~/Documents/GitHub/yuHCT/data/analysis/randomForest/', 
 rfValues <- responses%>%
   map(read_csv)%>%
   tibble()%>%
-  mutate(datatype = 'metabolomics',
+  mutate(dataType = 'metabolomics',
          responseVariable = responses)%>%
   rename(data = 1)%>%
   mutate(responseVariable = gsub('.csv', '', responseVariable))
@@ -260,99 +260,99 @@ significantMetabolites <- significantLmer%>%
 write_csv(significantMetabolites, '~/Documents/GitHub/yuHCT/data/analysis/significantMetaboliteSummary.csv')
 
 # Hierarchical clustering -------------------------------------------------
-circosFeatureClusters <- significantLmer%>%
-  ungroup()%>%
-  filter(dataType == 'metabolomics',
-         R2m > 0.1)%>%
-  select(responseVariable, feature)%>%
-  unique()%>%
-  group_by(feature)%>%
-  summarise(cluster = toString(responseVariable))%>%
-  mutate(cluster = gsub(', ', '_', cluster))
-
-
-hcFeatures <- (significantLmer%>%
-  ungroup()%>%
-  filter(dataType == 'metabolomics',
-         R2m > 0.1))$feature%>%
-  as.vector()%>%
-  unique()
-
-
-hcMetab <- rawMetab%>%
-  filter(sampleName != 'V120')%>%
-  select(-c(sampleName, dataType))%>% ##sampleName needs to be changed to iid when James gives the correct format
-  pivot_longer(2:ncol(.), names_to = 'features', values_to = 'xic')%>%
-  filter(features %in% hcFeatures)%>%
-  group_by(features)%>%
-  mutate(xic = ifelse(is.na(xic), gapFillValue, xic),
-         xic = zscore(xic))%>%
-  ungroup()%>%
-  pivot_wider(names_from = 'features', values_from = 'xic')%>%
-  left_join(rawPhenotype%>%
-              select(-c(age:smoker))%>%
-              pivot_longer(2:ncol(.), names_to = 'phenotype', values_to = 'value')%>%
-              group_by(phenotype)%>%
-              mutate(value = zscore(value))%>%
-              pivot_wider(names_from = 'phenotype', values_from = 'value'),
-            by = 'iid')%>%
-  column_to_rownames(var = 'iid')%>%
-  pheatmap::pheatmap(color = brewer.pal(n = 9, name = "Greys"), 
-                     fontsize_col = 3, fontsize_row = 4, cutree_cols = 14)
-
-#hc Orders
-hcOrders <- tibble(feature = hcMetab$tree_col[['labels']], 
-                   order =  hcMetab$tree_col[['order']])%>%
-  arrange(order)
-
-clusters <- cutree(hcMetab$tree_col, k = 14)%>%
-  as.data.frame()%>%
-  rownames_to_column(var = 'feature')%>%
-  rename(cluster = 2)
-
-
-#HC plots
-pdf('~/Documents/GitHub/yuHCT/data/plots/hcMetabolites.svg', width = 15, height = 10)
-hcMetab
-dev.off()
+# circosFeatureClusters <- significantLmer%>%
+#   ungroup()%>%
+#   filter(dataType == 'metabolomics',
+#          R2m > 0.1)%>%
+#   select(responseVariable, feature)%>%
+#   unique()%>%
+#   group_by(feature)%>%
+#   summarise(cluster = toString(responseVariable))%>%
+#   mutate(cluster = gsub(', ', '_', cluster))
+# 
+# 
+# hcFeatures <- (significantLmer%>%
+#   ungroup()%>%
+#   filter(dataType == 'metabolomics',
+#          R2m > 0.1))$feature%>%
+#   as.vector()%>%
+#   unique()
+# 
+# 
+# hcMetab <- rawMetab%>%
+#   filter(sampleName != 'V120')%>%
+#   select(-c(sampleName, dataType))%>% ##sampleName needs to be changed to iid when James gives the correct format
+#   pivot_longer(2:ncol(.), names_to = 'features', values_to = 'xic')%>%
+#   filter(features %in% hcFeatures)%>%
+#   group_by(features)%>%
+#   mutate(xic = ifelse(is.na(xic), gapFillValue, xic),
+#          xic = zscore(xic))%>%
+#   ungroup()%>%
+#   pivot_wider(names_from = 'features', values_from = 'xic')%>%
+#   left_join(rawPhenotype%>%
+#               select(-c(age:smoker))%>%
+#               pivot_longer(2:ncol(.), names_to = 'phenotype', values_to = 'value')%>%
+#               group_by(phenotype)%>%
+#               mutate(value = zscore(value))%>%
+#               pivot_wider(names_from = 'phenotype', values_from = 'value'),
+#             by = 'iid')%>%
+#   column_to_rownames(var = 'iid')%>%
+#   pheatmap::pheatmap(color = brewer.pal(n = 9, name = "Greys"), 
+#                      fontsize_col = 3, fontsize_row = 4, cutree_cols = 14)
+# 
+# #hc Orders
+# hcOrders <- tibble(feature = hcMetab$tree_col[['labels']], 
+#                    order =  hcMetab$tree_col[['order']])%>%
+#   arrange(order)
+# 
+# clusters <- cutree(hcMetab$tree_col, k = 14)%>%
+#   as.data.frame()%>%
+#   rownames_to_column(var = 'feature')%>%
+#   rename(cluster = 2)
+# 
+# 
+# #HC plots
+# pdf('~/Documents/GitHub/yuHCT/data/plots/hcMetabolites.svg', width = 15, height = 10)
+# hcMetab
+# dev.off()
 
 
 # hc -- phenotype hc ------------------------------------------------------
 ## Once I have the new IID Dataframe I can change sampleName out for it and then this should work a lot smoother as a subplot of the HC
-hcIidOrder <- (tibble(feature = hcMetab$tree_row[['labels']], 
-                     order =  hcMetab$tree_row[['order']])%>%
-  arrange(order))$feature
-
-test <- hcMetab$tree_row$order
-
-hcPhenotype <- rawPhenotype%>% 
-  select(iid, hct, hb, SpO2, sbp, dbp, glucose, insulin, iron, hvr)%>%
-  pivot_longer(2:ncol(.), names_to = 'phenotype', values_to = 'values')%>%
-  left_join(metabIIDs, by = 'iid')%>%
-  filter(!sampleName %in% badNames)%>%
-  group_by(phenotype)%>%
-  mutate(iid = as.factor(iid),
-         iid = fct_relevel(iid, hcIidOrder),
-         zscore = zscore(values))%>%
-  ungroup()%>%
-  select(-c(sampleName, values))%>%
-  # ggplot() +
-  # geom_tile(aes(phenotype, iid, fill = zscore))
-  pivot_wider(names_from = 'phenotype', values_from = 'zscore')%>%
-  column_to_rownames(var = 'iid')%>%
-  pheatmap::pheatmap(cluster_rows = FALSE, na.omit = TRUE, fontsize_row = 4, display_numbers = test,
-                     color = colorRampPalette(rev(brewer.pal(n = 7, name ="RdBu")))(100))
-dev.off()  
-
-
-# hcPhenotype$tree_row <- hcMetab$tree_row
-
-
-
-
-pdf('~/Documents/GitHub/yuHCT/data/plots/hcPhenotypes.pdf', width = 15, height = 10)
-hcPhenotype
-dev.off()
+# hcIidOrder <- (tibble(feature = hcMetab$tree_row[['labels']], 
+#                      order =  hcMetab$tree_row[['order']])%>%
+#   arrange(order))$feature
+# 
+# test <- hcMetab$tree_row$order
+# 
+# hcPhenotype <- rawPhenotype%>% 
+#   select(iid, hct, hb, SpO2, sbp, dbp, glucose, insulin, iron, hvr)%>%
+#   pivot_longer(2:ncol(.), names_to = 'phenotype', values_to = 'values')%>%
+#   left_join(metabIIDs, by = 'iid')%>%
+#   filter(!sampleName %in% badNames)%>%
+#   group_by(phenotype)%>%
+#   mutate(iid = as.factor(iid),
+#          iid = fct_relevel(iid, hcIidOrder),
+#          zscore = zscore(values))%>%
+#   ungroup()%>%
+#   select(-c(sampleName, values))%>%
+#   # ggplot() +
+#   # geom_tile(aes(phenotype, iid, fill = zscore))
+#   pivot_wider(names_from = 'phenotype', values_from = 'zscore')%>%
+#   column_to_rownames(var = 'iid')%>%
+#   pheatmap::pheatmap(cluster_rows = FALSE, na.omit = TRUE, fontsize_row = 4, display_numbers = test,
+#                      color = colorRampPalette(rev(brewer.pal(n = 7, name ="RdBu")))(100))
+# dev.off()  
+# 
+# 
+# # hcPhenotype$tree_row <- hcMetab$tree_row
+# 
+# 
+# 
+# 
+# pdf('~/Documents/GitHub/yuHCT/data/plots/hcPhenotypes.pdf', width = 15, height = 10)
+# hcPhenotype
+# dev.off()
 
 
 # Circos Plot -- Chromosomes and bands -------------------------------------------------
@@ -488,7 +488,7 @@ variableLinks <- circosPrep%>%
               unique(), 
             by = 'feature')%>%
   ungroup()%>%
-  group_by(feature)
+  group_by(feature)%>%
   mutate(bandStart = as.numeric(start),
          bandEnd = as.numeric(bandEnd),
          n = 1,

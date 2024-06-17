@@ -86,14 +86,14 @@ show = yes
 color = black
 type = text
 
-r1 = 0.96r
+r1 = 0.98r
 r0 = 0.84r
 
 label_size   = 20p
 label_font   = condensed
 
 padding  = 0p
-rpadding = 6p
+rpadding = 10p
 </plot>
 
 <plot>
