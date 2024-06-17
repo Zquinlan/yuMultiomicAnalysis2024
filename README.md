@@ -1,6 +1,7 @@
 # A multi-omics analysis of adaptation to high altitude in Andean highlanders
+<br>
 [![DOI](https://zenodo.org/badge/803057291.svg)](https://zenodo.org/doi/10.5281/zenodo.11218439)
-
+<br><br>
 Yu, James, J.*; Quinlan, Zachary A.; Gu, Wanjun; Li, Jane; Anza-Ramirez, Cecilia;
 Macarlupu, Jose-Luis; Figueroa-Mujica, Rómulo; Bermudez, Daniela; Corante, Noemi; Cole,
 Amy; Gaio, Eduardo; Mercader, Kysha; Long, Tao; Alotaibi, Mona; Jain, Mohit; Heinrich, Erica
