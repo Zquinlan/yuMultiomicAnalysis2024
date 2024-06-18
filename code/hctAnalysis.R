@@ -140,7 +140,8 @@ rfValues <- responses%>%
   mutate(dataType = 'metabolomics',
          responseVariable = responses)%>%
   rename(data = 1)%>%
-  mutate(responseVariable = gsub('.csv', '', responseVariable))
+  mutate(responseVariable = gsub('.csv', '', responseVariable),
+         responseVariable = gsub('randomForest', '', responseVariable))
 
 setwd('~/Documents/GitHub/yuHCT/data/')
   
@@ -260,17 +261,17 @@ significantMetabolites <- significantLmer%>%
 write_csv(significantMetabolites, '~/Documents/GitHub/yuHCT/data/analysis/significantMetaboliteSummary.csv')
 
 # Hierarchical clustering -------------------------------------------------
-# circosFeatureClusters <- significantLmer%>%
-#   ungroup()%>%
-#   filter(dataType == 'metabolomics',
-#          R2m > 0.1)%>%
-#   select(responseVariable, feature)%>%
-#   unique()%>%
-#   group_by(feature)%>%
-#   summarise(cluster = toString(responseVariable))%>%
-#   mutate(cluster = gsub(', ', '_', cluster))
-# 
-# 
+circosFeatureClusters <- significantLmer%>%
+  ungroup()%>%
+  filter(dataType == 'metabolomics',
+         R2m > 0.1)%>%
+  select(responseVariable, feature)%>%
+  unique()%>%
+  group_by(feature)%>%
+  summarise(cluster = toString(responseVariable))%>%
+  mutate(cluster = gsub(', ', '_', cluster))
+
+
 # hcFeatures <- (significantLmer%>%
 #   ungroup()%>%
 #   filter(dataType == 'metabolomics',
